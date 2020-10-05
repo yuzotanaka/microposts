@@ -96,6 +96,46 @@ class User extends Authenticatable
 
     public function loadRelationshipCounts()
     {
-        $this->loadCount('microposts', 'followings', 'followers');
+        $this->loadCount('microposts', 'followings', 'followers', 'favorites');
     }
+    
+    public function favorites()
+    {
+        return $this->belongsToMany(Micropost::class, 'favorites', 'user_id', 'micropost_id')->withTimestamps();
+    }
+    
+    
+    public function favorite($userId)
+    {
+        $exist = $this->is_favorites($userId);
+
+        $its_me = $this->micropost == $userId;
+
+        if ($exist || $its_me) {
+            return false;
+        } else {
+            $this->favorites()->attach($userId);
+            return true;
+        }
+    }
+
+    public function unfavorite($userId)
+    {
+        $exist = $this->is_favorites($userId);
+
+        $its_me = $this->micropost == $userId;
+
+        if ($exist && !$its_me) {
+            $this->favorites()->detach($userId);
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    public function is_favorites($userId)
+    {
+        return $this->favorites()->where('micropost_id', $userId)->exists();
+    }
+    
 }
